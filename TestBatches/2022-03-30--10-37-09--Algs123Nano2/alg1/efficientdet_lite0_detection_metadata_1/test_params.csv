@@ -1,0 +1,2 @@
+,stop,threshold_temp,start_temp,start_net
+0,300,55,40,efficientdet_lite0_detection_metadata_1
