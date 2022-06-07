@@ -1,51 +1,52 @@
-# import the necessary packages
+###############
+### PROGRAM ###
+###############
 
+# Import packages
 import datetime
-# import os
 from auxiliary_functions import *
 from metareasoning import *
 import pandas as pd
 from q_learning import *
 
+# Program
 def program(path, algorithm_name, start_net, 
             device, stop, start_temp, threshold_temp, TAC, 
             strat, initial_pause_duration, pause_adjustment_coef,
             nets, net_names, net_accuracies, net_durations, image_files) :
 
-
+    # Print test info (for debugging)
     print('[INFO]: Running test with: Stop = {}, strat = {}, TAC = {}, IPD = {}, PAC = {}, start_net = {}'.format(
         stop, strat, TAC, initial_pause_duration, pause_adjustment_coef, start_net
     ))
-
-    # labels = pd.read_csv('label.csv', sep=';', index_col='ID')
-    # labels = labels['OBJECT (2017 REL.)']
     
-    #####
+    # Calculate maximum loop length, throughput, and accuracy
     max_loop_length = net_durations.max(axis=1).tolist()[0]
     max_throughput = 1/max_loop_length
     max_accuracy = net_accuracies.max(axis=1).tolist()[0]
-    # print('max_throughput: {}',format(max_throughput))
-    # print('max_accuracy: {}'.format(max_accuracy))
-    #####
 
+    # If running q-learning...
     if algorithm_name == 'alg4' :
+        # If training, initialize q-table (uncomment below)
         # q_table_df = initialize_q_table()
+
+        # If testing, load q-table (uncomment below)
         if device == 'rpi' :
             q_table_df = pd.read_csv(os.path.join('/home/pi/Research/TestBatches/2022-03-30--17-24-29--Alg4RPi2/alg4/Strat_0/q_table.csv'))
         elif device == 'nano' :
             q_table_df = pd.read_csv('/home/michael/Research/TestBatches/2022-03-31--11-21-05--Alg4Nano2/alg4/Strat_0/q_table.csv', index_col=False)
         
+        # Cleans up loaded q-table
         q_table_df = q_table_df.loc[:,~q_table_df.columns.str.contains('^Unnamed')]
 
     # print(list(q_table_df.columns))
     
+    # Define initial values for data records
     cpu_record = [0]
     loop_duration_record = [0]
     net_record = [start_net]
     temp_record_CPU = [measure_temp_CPU()]
     temp_record_GPU = [measure_temp_GPU()]
-    # if device == 'nano' : temp_record_GPU = []
-    # elif device == 'rpi' : temp_record_GPU = [measure_temp_GPU()]
     processing_duration_record = [0]
     time_record = [0]
     iterator_record = [0]
@@ -54,14 +55,13 @@ def program(path, algorithm_name, start_net,
     action = 'NA'
     action_record = ['NA']
 
+    # Run function to stabilize temperature at desired start temperature
     stabilize_temp(start_temp, nets)
 
 # Main Loop
     # loop over the frames from the video stream
     while time_record[-1] < stop :
         
-        # print('[INFO]: Iteration record = {}'.format(iterator_record[-1]), end='\r')
-
     # Record loop start time
         loop_start_time = datetime.datetime.now()
 
@@ -123,6 +123,7 @@ def program(path, algorithm_name, start_net,
                 pause_duration_record, loop_duration_record, 
                 net_record, avg_accuracy_record, action_record)
 
+    # Save final q-table if training
     # if algorithm_name == 'alg4' : 
     #     q_table_df.to_csv(os.path.join(path, "q_table" + ".csv"))       
 

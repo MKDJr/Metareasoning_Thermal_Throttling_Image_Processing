@@ -1,7 +1,8 @@
-# Aux Funcitons
+############################
+### AUXILLIARY FUNCTIONS ###
+############################
 
 # Import libraries
-# from email import iterators
 import numpy as np
 import time
 import cv2
@@ -11,16 +12,13 @@ import psutil
 import pandas as pd
 import datetime
 from statistics import mean
-# from pycocotools.coco import COCO
-# import imutils
 import tensorflow as tf
 
+# Test to see if the GPU is being used
 if tf.test.gpu_device_name(): 
-
     print('Default GPU Device: {}'.format(tf.test.gpu_device_name()))
 
 else:
-
    print("Please install GPU version of TF")
 
 # Load Models
@@ -37,12 +35,14 @@ def load_models(net_names) :
 
     return nets
 
+# Set up GPIO pins
 if platform.node() != 'michael-desktop' :
     import RPi.GPIO as GPIO
     GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(5, GPIO.OUT)
 
+# Measure CPU temperature
 def measure_temp_CPU():
 
     if platform.node() == 'michael-desktop' :
@@ -68,6 +68,7 @@ def measure_temp_CPU():
 
     return cpu_temp
 
+# Measure GPU temperature
 def measure_temp_GPU():
 
     if platform.node() == 'michael-desktop' :
@@ -84,10 +85,12 @@ def measure_temp_GPU():
         gpu_temp = float(numeric_string)/10
     return gpu_temp
 
+# Measure CPU usage
 def measure_cpu():
     cpu_use = psutil.cpu_percent(interval=None)
     return float(cpu_use)
 
+# Calculate moving average
 def moving_average(numbers, window_size):
 #     return np.convolve(numbers, np.ones(window_size)/window_size, mode='valid')
     i = 0
@@ -100,6 +103,7 @@ def moving_average(numbers, window_size):
         i += 1
     return moving_averages
 
+# Find mean temperature
 def find_mean_temp(window) :
     print("[INFO]: Taking {} second mean temperature...".format(window))
     test_temp_record_CPU = []
@@ -111,14 +115,17 @@ def find_mean_temp(window) :
     print("[INFO]: Mean temperature: {} degrees Celsius.".format(mean_test_temp))
     return mean_test_temp
 
+# Turn fan on
 def fan_on() :
     GPIO.output(5, True)
     print("[INFO]: Fan on. Temperature at: {}".format(measure_temp_CPU())) 
 
+# Turn fan off
 def fan_off() :
     GPIO.output(5, False)
     print("[INFO]: Fan off. Temperature at: {}".format(measure_temp_CPU()))
 
+# Stabilize temperature
 def stabilize_temp(des_temp, nets) :
     print("[INFO]: Stabilizing temperature.")
 
@@ -153,6 +160,7 @@ def stabilize_temp(des_temp, nets) :
 
     print('[INFO]: Temperature stabilized at {}.'.format(measure_temp_CPU()))
 
+# Record data first time
 def record_data_1(device, iterator_record, time_record, 
                 processing_duration, temp_record_CPU, temp_record_GPU, 
                 processing_duration_record, loop_duration_record, cpu_record,
@@ -173,6 +181,7 @@ def record_data_1(device, iterator_record, time_record,
     avg_accuracy_record.append(avg_accuracy_record[-1])
     action_record.append(action_record[-1])
 
+# Record data second time
 def record_data_2(device, iterator_record, time_record, loop_duration, 
                 processing_duration, temp_record_CPU, temp_record_GPU, 
                 processing_duration_record, loop_duration_record, cpu_record,
@@ -195,6 +204,7 @@ def record_data_2(device, iterator_record, time_record, loop_duration,
     avg_accuracy_record.append(avg_accuracy)
     action_record.append(action)
 
+# Save data
 def save_data(path, device, iterator_record, time_record, temp_record_CPU,
                 temp_record_GPU, cpu_record, processing_duration_record,
                 pause_duration_record, loop_duration_record, 
@@ -253,6 +263,7 @@ def save_data(path, device, iterator_record, time_record, temp_record_CPU,
 
 #     return detections    
 
+# Image processing function
 def process_image_tf(device, image_files, iterator_record, net_record, nets) :
     if device == 'nano' : frame = cv2.imread('/home/michael/val2017/' + image_files[10])
     elif device == 'rpi' : frame = cv2.imread('/home/pi/val2017/' + image_files[10])
@@ -266,6 +277,7 @@ def process_image_tf(device, image_files, iterator_record, net_record, nets) :
     nets[net_record[-1]].set_tensor(input_details[0]['index'], working_frame)
     nets[net_record[-1]].invoke()
 
+# Calculate average network duration
 def get_net_info(device, nets, image_files, net_names, start_temp) :
 
     net_durations = {}
